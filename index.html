@@ -415,7 +415,7 @@ show();
 <script>
 (function(){
 /* ▼▼ Google Apps Script Web app URL এখানে বসান (ফাঁকা থাকলে ডেমো মোড চলবে) ▼▼ */
-const APPS_URL="https://script.google.com/macros/s/AKfycbxbl1n1n2d9xrak6bMX-T8zIsEVDQJt9HyXJTYsycc801L3jqE7Tj3_Damn3DF8m_0g/exec";
+const APPS_URL="https://script.google.com/macros/s/AKfycbwmwXZehBQR9x88OlVTyokIL3FvrdJ4hPiHj1D-vXtgHSxQF2ofblNDqjHcpHtCKZY5UQ/exec";
 /* ▲▲ ----------------------------------------------------------------- ▲▲ */
 const DEMO=!APPS_URL;
 let role="visitor",pw="",sets=[],showKey=false;
@@ -446,9 +446,12 @@ function demo(action,d){
   if(action==="login")return{role:rl};
   if(action==="list")return{sets:db.map(meta)};
   if(action==="get"){const s=db.find(x=>x.id===d.id);return{set:rl==="visitor"?strip(s):s};}
+  if(action==="pdfList")return{pdfs:(window.__dp||[]).map(x=>({id:x.id,name:x.name,url:x.url}))};
   if(action==="examGet"){const x=db.find(y=>y.id===d.id);if(!x)throw new Error("পরীক্ষা পাওয়া যায়নি");if(!x.live&&rl==="visitor")throw new Error("এই পরীক্ষা এখন চালু নেই");return{set:strip(x)};}
   if(action==="examSubmit"){const x=db.find(y=>y.id===d.id);let sc=0;x.items.forEach((it,i)=>{if(d.answers[i]===it.answer)sc++;});const rs=JSON.parse(localStorage.getItem("qb_res")||"[]");if(rs.some(y=>y.id===d.id&&y.roll===d.roll))throw new Error("এই রোল দিয়ে আগেই পরীক্ষা দেওয়া হয়েছে");rs.push({id:d.id,roll:d.roll,name:d.name,score:sc,total:x.items.length,t:Date.now()});localStorage.setItem("qb_res",JSON.stringify(rs));return{score:sc,total:x.items.length};}
   if(rl==="visitor"&&action!=="save")throw new Error("অনুমতি নেই");
+  if(action==="pdfUpload"){const bin=atob(d.file),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);(window.__dp=window.__dp||[]).unshift({id:"p"+Date.now(),name:d.name,url:URL.createObjectURL(new Blob([u],{type:"application/pdf"}))});return{};}
+  if(action==="pdfDelete"){window.__dp=(window.__dp||[]).filter(x=>x.id!==d.id);return{};}
   if(action==="examResults")return{results:JSON.parse(localStorage.getItem("qb_res")||"[]").filter(x=>x.id===d.id)};
   if(action==="save"){const s=Object.assign({},d.set,{id:"q"+Date.now(),created:Date.now(),by:rl});db.unshift(s);save();return{};}
   if(action==="update"){const i=db.findIndex(x=>x.id===d.set.id);if(rl!=="admin"&&d.set.items.length<db[i].items.length)throw new Error("এডিটর প্রশ্ন মুছতে পারে না");db[i]=d.set;save();return{};}
@@ -577,6 +580,7 @@ function dlDialog(s,noKey){
 /* ---------- তৈরি ট্যাব ---------- */
 window.render=function(){showKey=false;drawOut();};
 window.bankSave=async set=>{await api("save",{set});toast("প্রশ্ন ব্যাংকে সংরক্ষণ হয়েছে");loadBank();};
+window.qbApi=api;window.qbRole=()=>role;
 function drawOut(){
   const out=$("out");out.textContent="";const s=state;
   out.appendChild(buildPaper(s,showKey));fitOpts(out);
@@ -590,17 +594,21 @@ function drawOut(){
 }
 
 /* ---------- প্রশ্ন ব্যাংক ---------- */
+let loadErr="";
 async function loadBank(){
   $("bankList").textContent="লোড হচ্ছে…";
-  try{sets=(await api("list")).sets;drawBank();}catch(e){$("bankList").textContent="লোড করা যায়নি: "+e.message;}
+  try{sets=(await api("list")).sets||[];loadErr="";drawBank();}catch(e){loadErr=e.message;$("bankList").textContent="লোড করা যায়নি: "+e.message;drawExam();}
 }
 function drawExam(){
   const box=$("examList");box.textContent="";
-  const list=sets.filter(m=>m.type==="mcq"&&(role!=="visitor"||m.live));
-  if(!list.length){box.appendChild(el("p","sub",role==="visitor"?"এখন কোনো পরীক্ষা চালু নেই।":"কোনো MCQ সেট নেই। প্রশ্ন ব্যাংকে MCQ সেট সংরক্ষণ করলে এখানে আসবে।"));return;}
+  const hp=el("div","msg",role==="visitor"?"নিচের তালিকা থেকে পরীক্ষা বেছে রোল নম্বর দিয়ে শুরু করুন।":"শিক্ষক: ১) MCQ সেটের পাশে ▶ চালু করুন  ২) লিংক কপি করে ছাত্রদের পাঠান  ৩) পরে ফলাফল দেখুন ও ⏸ বন্ধ করুন।");
+  const rf=el("button","sec","🔄 তালিকা নতুন করুন");rf.type="button";rf.onclick=loadBank;box.append(hp,rf);
+  const list=sets.filter(m=>role!=="visitor"||(m.type==="mcq"&&m.live));
+  if(!list.length){box.appendChild(el("p","sub",loadErr?"সার্ভার থেকে সেট আনা যায়নি: "+loadErr:(role==="visitor"?"এখন কোনো পরীক্ষা চালু নেই।":"ব্যাংকে কোনো সেট নেই। আগে প্রশ্ন তৈরি করে ব্যাংকে সংরক্ষণ করুন।")));return;}
   list.forEach(m=>{
     const c=el("div","bc");c.appendChild(el("h3",null,ttl(m)||"(নামহীন)"));
-    c.appendChild(el("small",null,m.cls+" • "+m.subj+" • "+num(m.count,m.lang)+"টি প্রশ্ন • "+num(m.time,m.lang)+" মিনিট"+(role!=="visitor"?(m.live?" • চালু":" • বন্ধ"):"")));
+    c.appendChild(el("small",null,m.cls+" • "+m.subj+" • "+num(m.count,m.lang)+"টি প্রশ্ন • "+num(m.time,m.lang)+" মিনিট"+(role!=="visitor"&&m.type==="mcq"?(m.live?" • চালু":" • বন্ধ"):"")));
+    if(m.type!=="mcq"){c.appendChild(el("small",null,"⚠️ MCQ নয়: অনলাইন পরীক্ষা শুধু MCQ সেটে চলে"));box.appendChild(c);return;}
     const a=el("div","acts"),b=(t,f)=>{const x=el("button","sec",t);x.onclick=f;a.appendChild(x);};
     b("পরীক্ষা দিন",()=>startExam(m.id));
     if(role!=="visitor")b(m.live?"⏸ বন্ধ করুন":"▶ ছাত্রদের জন্য চালু করুন",async()=>{try{const f=(await api("get",{id:m.id})).set;f.live=!m.live;await api("update",{set:f});toast(f.live?"পরীক্ষা চালু হয়েছে":"পরীক্ষা বন্ধ হয়েছে");loadBank();}catch(e){toast(e.message);}});
@@ -610,7 +618,7 @@ function drawExam(){
   });
 }
 function drawBank(){
-  drawExam();
+  drawExam();if(window.pdfDraw)window.pdfDraw();
   const box=$("bankList"),q=$("bq").value.trim().toLowerCase(),t=$("bt").value;box.textContent="";
   const list=sets.filter(m=>(!t||m.type===t)&&(!q||[m.inst,m.name,m.cls,m.subj].join(" ").toLowerCase().includes(q)));
   if(!list.length){box.appendChild(el("p","sub","কোনো প্রশ্ন সেট পাওয়া যায়নি।"));return;}
@@ -695,7 +703,7 @@ async function showRes(m){
 }
 
 /* ---------- ট্যাব, লগইন ---------- */
-function show(v){$("vExam").hidden=v!=="e";$("tExam").classList.toggle("on",v==="e");$("vCreate").hidden=v!=="c";$("vBank").hidden=v!=="b";$("tCreate").classList.toggle("on",v==="c");$("tBank").classList.toggle("on",v==="b");}
+function show(v){$("vExam").hidden=v!=="e";$("tExam").classList.toggle("on",v==="e");$("vCreate").hidden=v!=="c";$("vBank").hidden=v!=="b";$("tCreate").classList.toggle("on",v==="c");$("tBank").classList.toggle("on",v==="b");if(v==="e")loadBank();}
 function applyRole(){
   $("tCreate").hidden=false;$("roleTxt").textContent=role==="visitor"?"":RN[role];
   $("loginBtn").textContent=role==="visitor"?"লগইন":"লগআউট";
@@ -957,6 +965,43 @@ save.onclick=async()=>{
   save.disabled=false;
 };
 host.parentNode.insertBefore(card,host);
+})();
+</script>
+<script>
+(function(){
+const mk=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;};
+function toast(t){const d=mk("div","toast",t);document.body.appendChild(d);setTimeout(()=>d.remove(),3000);}
+const card=mk("div","card"),ti=document.createElement("input"),fi=document.createElement("input"),up=mk("button",null,"⬆️ PDF আপলোড করুন"),list=mk("div");
+ti.placeholder="PDF-এর নাম (যেমন: নবম শ্রেণি ইংরেজি প্রথম পত্র)";fi.type="file";fi.accept="application/pdf";up.type="button";
+card.append(mk("h3",null,"📎 প্রশ্নের PDF আপলোড"),mk("small",null,"PDF ফাইল ব্যাংকে জমা রাখুন, পরে যেকোনো সময় খুলুন। (শুধু এডিটর/অ্যাডমিন আপলোড করতে পারে, সর্বোচ্চ ৮ MB)"),mk("label",null,"নাম"),ti,mk("label",null,"ফাইল"),fi,mk("div","acts"),list);
+card.children[card.children.length-2].appendChild(up);
+async function draw(){
+  try{const r=await window.qbApi("pdfList");list.textContent="";
+    const a=r.pdfs||[];if(!a.length)list.appendChild(mk("small",null,"এখনো কোনো PDF আপলোড করা হয়নি।"));
+    a.forEach(x=>{const row=mk("div","part"),l=mk("a",null,"📄 "+x.name);l.href=x.url;l.target="_blank";l.rel="noopener";row.appendChild(l);
+      if(window.qbRole()==="admin"){const d=mk("button","sec","মুছুন");d.type="button";d.onclick=async()=>{if(!confirm("PDF মুছবেন?"))return;try{await window.qbApi("pdfDelete",{id:x.id});draw();}catch(e){toast(e.message);}};row.appendChild(d);}
+      list.appendChild(row);});
+  }catch(e){list.textContent="";list.appendChild(mk("small",null,"PDF তালিকা লোড হয়নি।"));}
+}
+window.pdfDraw=draw;
+up.onclick=()=>{
+  const f=fi.files[0],n=ti.value.trim();
+  if(window.qbRole()==="visitor")return toast("আপলোডের জন্য আগে লগইন করুন");
+  if(!n)return toast("PDF-এর নাম লিখুন");
+  if(!f)return toast("একটা PDF ফাইল বাছুন");
+  if(f.type!=="application/pdf")return toast("শুধু PDF চলবে");
+  if(f.size>8*1024*1024)return toast("ফাইল ৮ MB-এর বেশি");
+  up.disabled=true;up.textContent="আপলোড হচ্ছে…";
+  const r=new FileReader();
+  r.onerror=()=>{toast("ফাইল পড়া যায়নি");up.disabled=false;up.textContent="⬆️ PDF আপলোড করুন";};
+  r.onload=async()=>{
+    try{await window.qbApi("pdfUpload",{name:n,fname:f.name,file:String(r.result).split(",")[1]});ti.value="";fi.value="";toast("PDF জমা হয়েছে");draw();}
+    catch(e){toast("আপলোড হয়নি: "+e.message);}
+    up.disabled=false;up.textContent="⬆️ PDF আপলোড করুন";
+  };
+  r.readAsDataURL(f);
+};
+document.getElementById("pdfBtn").parentNode.after(card);
 })();
 </script>
 </body>
