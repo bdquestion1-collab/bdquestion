@@ -241,6 +241,7 @@ button.dng:hover{background:#be123c;color:#fff}
 <label for="stem" id="stemLabel">সৃজনশীল প্রশ্ন / উদ্দীপক / টপিক</label>
 <textarea id="stem"></textarea>
 <div class="imgrow"><button type="button" class="sec" id="imgBtn">📷 ছবি আপলোড করে লেখা নিন</button><small>ঐচ্ছিক</small><input type="file" id="imgFile" accept="image/*" hidden></div>
+<div class="imgrow"><button type="button" class="sec" id="pdfCreateBtn">📄 PDF আপলোড করে লেখা নিন</button><input type="file" id="pdfCreateFile" accept="application/pdf" hidden><label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" id="pdfOcrC" style="width:auto"> OCR দিয়ে পড়ুন (লেখা এলোমেলো এলে বা স্ক্যান করা PDF হলে)</label></div>
 <div class="row">
 <div><label for="type">প্রশ্নের ধরন</label><select id="type"><option value="mcq">MCQ (বহুনির্বাচনি)</option><option value="creative">সৃজনশীল</option><option value="short">সংক্ষিপ্ত প্রশ্ন</option></select></div>
 <div id="smodeWrap" hidden><label for="smode">উদ্দীপক</label><select id="smode"><option value="own">আমি নিজে দেব</option><option value="auto">টপিক থেকে বানান</option></select></div>
@@ -250,6 +251,10 @@ button.dng:hover{background:#be123c;color:#fff}
 <div class="stepper" role="group" aria-labelledby="nlab"><button type="button" class="stp" id="nminus" aria-label="কমান">−</button><output id="nview" aria-live="polite">২৫</output><button type="button" class="stp" id="nplus" aria-label="বাড়ান">+</button></div></div>
 <div><label for="lang">ভাষা</label><select id="lang"><option value="Bengali">বাংলা</option><option value="English">English</option></select></div>
 </div>
+<label for="aimodel">AI মডেল (ঐচ্ছিক)</label>
+<input id="aimodel" list="dl_model" autocomplete="off" placeholder="খালি রাখলে সাইটের ডিফল্ট মডেল চলবে">
+<datalist id="dl_model"><option value="gemini-4-hydrogen"><option value="gemini-2.5-flash"><option value="gemini-2.5-flash-lite"><option value="gemini-2.5-pro"></datalist>
+<small>মডেলের নাম হুবহু লিখুন (aistudio.google.com-এর তালিকা থেকে)। নাম ভুল হলে প্রশ্ন বানাবে না।</small>
 <button id="go">প্রশ্নপত্র বানান</button>
 </div>
 <div class="card" id="manual">
@@ -275,7 +280,14 @@ button.dng:hover{background:#be123c;color:#fff}
 <div class="bank">
 <p class="msg demo" id="demoNote" hidden>ডেমো মোড: Apps Script URL বসানো হয়নি, তাই ডেটা এই ব্রাউজারেই থাকছে। পরীক্ষার পাসওয়ার্ড: <b>admin</b> (অ্যাডমিন) ও <b>editor</b> (এডিটর)।</p>
 <div class="bt"><input id="bq" placeholder="খুঁজুন: প্রতিষ্ঠান, বিষয়, শ্রেণি…"><select id="bt"><option value="">সব ধরন</option><option value="mcq">MCQ</option><option value="short">সংক্ষিপ্ত</option><option value="creative">সৃজনশীল</option></select></div>
-<div class="acts"><button type="button" class="sec" id="pdfBtn">📄 PDF/ছবি থেকে প্রশ্ন বানান</button><input type="file" id="pdfFile" accept="application/pdf,image/*" hidden></div>
+<div class="card" id="conv"><h3 style="margin:0 0 8px">📄 PDF/ছবি থেকে টেক্সট বের করুন</h3>
+<small>PDF বা ছবি আপলোড করলে পুরো লেখা টেক্সট হয়ে নিচে আসবে (সর্বোচ্চ ৩০ পৃষ্ঠা)। লেখাটা কপি করতে বা "প্রশ্ন তৈরি"-তে পাঠাতে পারবেন।</small>
+<input type="file" id="convFile" accept="application/pdf,image/*">
+<label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" id="convOcr" style="width:auto"> OCR দিয়ে পড়ুন (লেখা এলোমেলো এলে বা স্ক্যান করা PDF হলে, ধীর)</label>
+<div class="acts"><button type="button" id="convGo">টেক্সটে রূপান্তর করুন</button></div>
+<div class="sub" id="convMsg"></div>
+<textarea id="convOut" style="min-height:180px" hidden></textarea>
+<div class="acts" id="convAct" hidden><button type="button" class="sec" id="convCopy">📋 কপি করুন</button><button type="button" class="sec" id="convSend">✍️ প্রশ্ন তৈরিতে পাঠান</button></div></div>
 <div id="bankList"></div>
 </div>
 </section>
@@ -335,7 +347,7 @@ let lastErr="";
 async function fetchBatch(args){
   for(let a=0;a<6;a++){
     try{
-      const r=await fetch("/.netlify/functions/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(args)});
+      const r=await fetch("/.netlify/functions/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(Object.assign({model:($("aimodel").value||"").trim()},args))});
       const txt=await r.text();
       let j={};try{j=JSON.parse(txt);}catch(e){}
       if(r.status===429||r.status===503){lastErr="HTTP "+r.status+" (সীমা শেষ বা সার্ভার ব্যস্ত), অপেক্ষা করছে";await sleep(20000);continue;}
@@ -844,40 +856,6 @@ FILE.onchange=async()=>{
 </script>
 <script>
 (function(){
-const PJ="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",PW="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",TS="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
-const g=id=>document.getElementById(id);
-const ld=u=>new Promise((ok,no)=>{if(document.querySelector('script[src="'+u+'"]'))return ok();const e=document.createElement("script");e.src=u;e.onload=ok;e.onerror=()=>no(new Error("লাইব্রেরি লোড হয়নি"));document.head.appendChild(e);});
-function toast(t){const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),3000);}
-g("pdfBtn").onclick=()=>g("pdfFile").click();
-g("pdfFile").onchange=async function(){
-  const f=this.files[0];this.value="";if(!f)return;
-  if(f.type.startsWith("image/")){g("tCreate").click();const dt=new DataTransfer();dt.items.add(f);g("imgFile").files=dt.files;g("imgFile").dispatchEvent(new Event("change"));return;}
-  const b=g("pdfBtn");b.disabled=true;
-  try{
-    await ld(PJ);pdfjsLib.GlobalWorkerOptions.workerSrc=PW;
-    const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise,N=Math.min(pdf.numPages,15);let txt="";
-    for(let i=1;i<=N;i++){
-      b.textContent="পৃষ্ঠা "+i+"/"+N+" পড়া হচ্ছে…";
-      const pg=await pdf.getPage(i);
-      let t=(await pg.getTextContent()).items.map(x=>x.str).join(" ").trim();
-      if(t.length<40){
-        const vp=pg.getViewport({scale:2}),c=document.createElement("canvas");c.width=vp.width;c.height=vp.height;
-        await pg.render({canvasContext:c.getContext("2d"),viewport:vp}).promise;
-        await ld(TS);t=((await Tesseract.recognize(c,"ben+eng")).data.text||"").trim();
-      }
-      txt+=t+"\n";
-    }
-    txt=txt.trim().slice(0,8000);
-    if(!txt)throw new Error("লেখা পাওয়া যায়নি");
-    g("tCreate").click();const ta=g("stem");ta.value=ta.value.trim()?ta.value.trim()+"\n"+txt:txt;
-    toast("PDF থেকে লেখা বসেছে। চাইলে এডিট করে প্রশ্ন বানান।");
-  }catch(e){toast("PDF পড়া যায়নি: "+e.message);}
-  b.disabled=false;b.textContent="📄 PDF/ছবি থেকে প্রশ্ন বানান";
-};
-})();
-</script>
-<script>
-(function(){
 const g=id=>document.getElementById(id),mk=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;};
 function toast(t){const d=mk("div","toast",t);document.body.appendChild(d);setTimeout(()=>d.remove(),2800);}
 const items=[];let ans=-1,pt="";const ov=[],cb=[],sp=[];
@@ -969,40 +947,63 @@ host.parentNode.insertBefore(card,host);
 </script>
 <script>
 (function(){
-const mk=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;};
-function toast(t){const d=mk("div","toast",t);document.body.appendChild(d);setTimeout(()=>d.remove(),3000);}
-const card=mk("div","card"),ti=document.createElement("input"),fi=document.createElement("input"),up=mk("button",null,"⬆️ PDF আপলোড করুন"),list=mk("div");
-ti.placeholder="PDF-এর নাম (যেমন: নবম শ্রেণি ইংরেজি প্রথম পত্র)";fi.type="file";fi.accept="application/pdf";up.type="button";
-card.append(mk("h3",null,"📎 প্রশ্নের PDF আপলোড"),mk("small",null,"PDF ফাইল ব্যাংকে জমা রাখুন, পরে যেকোনো সময় খুলুন। (শুধু এডিটর/অ্যাডমিন আপলোড করতে পারে, সর্বোচ্চ ৮ MB)"),mk("label",null,"নাম"),ti,mk("label",null,"ফাইল"),fi,mk("div","acts"),list);
-card.children[card.children.length-2].appendChild(up);
-async function draw(){
-  try{const r=await window.qbApi("pdfList");list.textContent="";
-    const a=r.pdfs||[];if(!a.length)list.appendChild(mk("small",null,"এখনো কোনো PDF আপলোড করা হয়নি।"));
-    a.forEach(x=>{const row=mk("div","part"),l=mk("a",null,"📄 "+x.name);l.href=x.url;l.target="_blank";l.rel="noopener";row.appendChild(l);
-      if(window.qbRole()==="admin"){const d=mk("button","sec","মুছুন");d.type="button";d.onclick=async()=>{if(!confirm("PDF মুছবেন?"))return;try{await window.qbApi("pdfDelete",{id:x.id});draw();}catch(e){toast(e.message);}};row.appendChild(d);}
-      list.appendChild(row);});
-  }catch(e){list.textContent="";list.appendChild(mk("small",null,"PDF তালিকা লোড হয়নি।"));}
+const PJ="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",PW="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",TS="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+const g=id=>document.getElementById(id);
+const ld=u=>new Promise((ok,no)=>{if(document.querySelector('script[src="'+u+'"]'))return ok();const e=document.createElement("script");e.src=u;e.onload=ok;e.onerror=()=>no(new Error("লাইব্রেরি লোড হয়নি (ইন্টারনেট দেখুন)"));document.head.appendChild(e);});
+function toast(t){const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),3000);}
+async function extract(file,useOcr,say){
+  let worker=null;const parts=[];
+  const ocr=async c=>{if(!worker){await ld(TS);say("OCR প্রস্তুত হচ্ছে (প্রথমবার একটু সময় লাগে)…");worker=await Tesseract.createWorker("ben+eng");}return(((await worker.recognize(c)).data.text)||"").trim();};
+  try{
+    if(file.type.startsWith("image/")){
+      const im=await createImageBitmap(file),c=document.createElement("canvas");c.width=im.width;c.height=im.height;c.getContext("2d").drawImage(im,0,0);
+      say("ছবি পড়া হচ্ছে…");return await ocr(c);
+    }
+    await ld(PJ);pdfjsLib.GlobalWorkerOptions.workerSrc=PW;
+    const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise,N=Math.min(pdf.numPages,30);
+    for(let i=1;i<=N;i++){
+      say("পৃষ্ঠা "+i+"/"+N+(useOcr?" (OCR)":"")+" পড়া হচ্ছে…");
+      const pg=await pdf.getPage(i);let t="";
+      if(!useOcr){t=(await pg.getTextContent()).items.map(x=>x.str+(x.hasEOL?"\n":" ")).join("").replace(/[ \t]+/g," ").replace(/ ?\n ?/g,"\n").trim();}
+      if(useOcr||t.replace(/\s/g,"").length<40){
+        const vp=pg.getViewport({scale:2}),c=document.createElement("canvas");c.width=vp.width;c.height=vp.height;
+        await pg.render({canvasContext:c.getContext("2d"),viewport:vp}).promise;t=await ocr(c);
+      }
+      if(t)parts.push(t);
+    }
+    if(pdf.numPages>N)parts.push("(… শুধু প্রথম "+N+" পৃষ্ঠা পড়া হয়েছে)");
+    return parts.join("\n\n");
+  }finally{if(worker)try{await worker.terminate();}catch(e){}}
 }
-window.pdfDraw=draw;
-up.onclick=()=>{
-  const f=fi.files[0],n=ti.value.trim();
-  if(window.qbRole()==="visitor")return toast("আপলোডের জন্য আগে লগইন করুন");
-  if(!n)return toast("PDF-এর নাম লিখুন");
-  if(!f)return toast("একটা PDF ফাইল বাছুন");
-  if(f.type!=="application/pdf")return toast("শুধু PDF চলবে");
-  if(f.size>8*1024*1024)return toast("ফাইল ৮ MB-এর বেশি");
-  up.disabled=true;up.textContent="আপলোড হচ্ছে…";
-  const r=new FileReader();
-  r.onerror=()=>{toast("ফাইল পড়া যায়নি");up.disabled=false;up.textContent="⬆️ PDF আপলোড করুন";};
-  r.onload=async()=>{
-    try{await window.qbApi("pdfUpload",{name:n,fname:f.name,file:String(r.result).split(",")[1]});ti.value="";fi.value="";toast("PDF জমা হয়েছে");draw();}
-    catch(e){toast("আপলোড হয়নি: "+e.message);}
-    up.disabled=false;up.textContent="⬆️ PDF আপলোড করুন";
-  };
-  r.readAsDataURL(f);
+function toStem(t){g("tCreate").click();const ta=g("stem");ta.value=(ta.value.trim()?ta.value.trim()+"\n\n":"")+t;ta.dispatchEvent(new Event("input"));}
+/* প্রশ্ন তৈরি: PDF থেকে লেখা */
+g("pdfCreateBtn").onclick=()=>g("pdfCreateFile").click();
+g("pdfCreateFile").onchange=async function(){
+  const f=this.files[0];this.value="";if(!f)return;
+  const b=g("pdfCreateBtn"),old=b.textContent;b.disabled=true;
+  try{const t=await extract(f,g("pdfOcrC").checked,m=>{b.textContent=m;});
+    if(!t)throw new Error("কোনো লেখা পাওয়া যায়নি, OCR টিক দিয়ে আবার চেষ্টা করুন");
+    const ta=g("stem");ta.value=(ta.value.trim()?ta.value.trim()+"\n\n":"")+t;ta.dispatchEvent(new Event("input"));toast("পুরো লেখা উদ্দীপক ঘরে বসেছে");
+  }catch(e){toast("PDF পড়া যায়নি: "+e.message);}
+  b.disabled=false;b.textContent=old;
 };
-document.getElementById("pdfBtn").parentNode.after(card);
+/* প্রশ্ন ব্যাংক: PDF/ছবি থেকে টেক্সট */
+g("convGo").onclick=async()=>{
+  const f=g("convFile").files[0];if(!f)return toast("আগে একটা PDF বা ছবি বাছুন");
+  const b=g("convGo"),m=g("convMsg");b.disabled=true;g("convOut").hidden=g("convAct").hidden=true;
+  try{const t=await extract(f,g("convOcr").checked,x=>{m.textContent=x;});
+    if(!t)throw new Error("কোনো লেখা পাওয়া যায়নি, OCR টিক দিয়ে আবার চেষ্টা করুন");
+    g("convOut").value=t;g("convOut").hidden=g("convAct").hidden=false;m.textContent="হয়ে গেছে। লেখাটা দেখে ঠিক করে নিতে পারেন।";
+  }catch(e){m.textContent="পড়া যায়নি: "+e.message;}
+  b.disabled=false;
+};
+g("convCopy").onclick=async()=>{try{await navigator.clipboard.writeText(g("convOut").value);toast("কপি হয়েছে");}catch(e){g("convOut").select();toast("লেখাটা বেছে নেওয়া হয়েছে, Ctrl+C চাপুন");}};
+g("convSend").onclick=()=>{toStem(g("convOut").value);toast("প্রশ্ন তৈরি ট্যাবের উদ্দীপক ঘরে বসেছে");};
 })();
+</script>
+<script>
+(function(){var m=document.getElementById("aimodel");try{m.value=localStorage.getItem("qb_model")||"";}catch(e){}
+m.addEventListener("input",function(){try{localStorage.setItem("qb_model",m.value.trim());}catch(e){}});})();
 </script>
 </body>
 </html>
