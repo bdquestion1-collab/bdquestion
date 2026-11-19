@@ -181,6 +181,8 @@ button.dng:hover{background:#be123c;color:#fff}
 #pa .paper::before{display:none}
 .sheet{height:262mm;display:flex;flex-direction:column;overflow:hidden}
 .sheet+.sheet{break-before:page;page-break-before:always}
+.ai{display:none!important}
+a.aibtn{display:block;text-align:center;padding:15px 18px;border-radius:16px;font-weight:800;font-size:17px;text-decoration:none;color:#fff;background:linear-gradient(145deg,#8b5cf6,#6d28d9);box-shadow:0 8px 22px rgba(109,40,217,.35)}
 .sbody{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,1fr);column-gap:14mm;position:relative}
 .sbody::after{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:1px solid #999}
 .scol{min-width:0;height:100%;overflow:hidden}
@@ -227,6 +229,7 @@ button.dng:hover{background:#be123c;color:#fff}
 </header>
 <main>
 <section id="vCreate" hidden>
+<div class="card"><a class="aibtn" href="https://myquestion.netlify.app">🤖 এ আই দিয়ে প্রশ্ন তৈরি করুন</a></div>
 <div class="card">
 <label for="inst">প্রতিষ্ঠানের নাম</label><input id="inst" list="dl_inst" autocomplete="off" placeholder="যেমন: ঢাকা সরকারি উচ্চ বিদ্যালয়">
 <div class="row">
@@ -238,24 +241,26 @@ button.dng:hover{background:#be123c;color:#fff}
 <div><label for="etime">সময় (মিনিট)</label><input id="etime" list="dl_etime" autocomplete="off" type="number" min="1"></div>
 <div><label for="emarks">পূর্ণমান</label><input id="emarks" list="dl_emarks" autocomplete="off" type="number" min="1"></div>
 </div>
-<label for="stem" id="stemLabel">সৃজনশীল প্রশ্ন / উদ্দীপক / টপিক</label>
-<textarea id="stem"></textarea>
+<label for="stem" id="stemLabel" class="ai">সৃজনশীল প্রশ্ন / উদ্দীপক / টপিক</label>
+<label for="stem">ছবি / PDF / Word থেকে নেওয়া লেখা</label>
+<textarea id="stem" placeholder="ছবি বা ফাইল আপলোড করলে লেখা এখানে আসবে। এখান থেকে কপি করে বা নিচের বাটনে চেপে প্রশ্নের ঘরে নিন।"></textarea>
 <div class="imgrow"><button type="button" class="sec" id="imgBtn">📷 ছবি আপলোড করে লেখা নিন</button><small>ঐচ্ছিক</small><input type="file" id="imgFile" accept="image/*" hidden></div>
-<div class="imgrow"><button type="button" class="sec" id="pdfCreateBtn">📄 PDF আপলোড করে লেখা নিন</button><input type="file" id="pdfCreateFile" accept="application/pdf" hidden><label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" id="pdfOcrC" style="width:auto"> OCR দিয়ে পড়ুন (লেখা এলোমেলো এলে বা স্ক্যান করা PDF হলে)</label></div>
-<div class="row">
+<div class="imgrow"><button type="button" class="sec" id="pdfCreateBtn">📄 PDF/Word আপলোড করে লেখা নিন</button><input type="file" id="pdfCreateFile" accept="application/pdf,.docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden><label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" id="pdfOcrC" style="width:auto"> OCR দিয়ে পড়ুন (লেখা এলোমেলো এলে বা স্ক্যান করা PDF হলে)</label></div>
+<div class="acts"><button type="button" class="sec" id="stemToQ">⬇️ এই লেখা প্রশ্নের ঘরে পাঠান</button></div>
+<div class="row ai">
 <div><label for="type">প্রশ্নের ধরন</label><select id="type"><option value="mcq">MCQ (বহুনির্বাচনি)</option><option value="creative">সৃজনশীল</option><option value="short">সংক্ষিপ্ত প্রশ্ন</option></select></div>
 <div id="smodeWrap" hidden><label for="smode">উদ্দীপক</label><select id="smode"><option value="own">আমি নিজে দেব</option><option value="auto">টপিক থেকে বানান</option></select></div>
 </div>
 <div class="row">
-<div><label id="nlab">প্রশ্নের সংখ্যা</label><select id="n" hidden></select>
+<div class="ai"><label id="nlab">প্রশ্নের সংখ্যা</label><select id="n" hidden></select>
 <div class="stepper" role="group" aria-labelledby="nlab"><button type="button" class="stp" id="nminus" aria-label="কমান">−</button><output id="nview" aria-live="polite">২৫</output><button type="button" class="stp" id="nplus" aria-label="বাড়ান">+</button></div></div>
 <div><label for="lang">ভাষা</label><select id="lang"><option value="Bengali">বাংলা</option><option value="English">English</option></select></div>
 </div>
-<label for="aimodel">AI মডেল (ঐচ্ছিক)</label>
-<input id="aimodel" list="dl_model" autocomplete="off" placeholder="খালি রাখলে সাইটের ডিফল্ট মডেল চলবে">
+<label for="aimodel" class="ai">AI মডেল (ঐচ্ছিক)</label>
+<input id="aimodel" class="ai" list="dl_model" autocomplete="off" placeholder="খালি রাখলে সাইটের ডিফল্ট মডেল চলবে">
 <datalist id="dl_model"><option value="gemini-4-hydrogen"><option value="gemini-2.5-flash"><option value="gemini-2.5-flash-lite"><option value="gemini-2.5-pro"></datalist>
-<small>মডেলের নাম হুবহু লিখুন (aistudio.google.com-এর তালিকা থেকে)। নাম ভুল হলে প্রশ্ন বানাবে না।</small>
-<button id="go">প্রশ্নপত্র বানান</button>
+<small class="ai">মডেলের নাম হুবহু লিখুন (aistudio.google.com-এর তালিকা থেকে)। নাম ভুল হলে প্রশ্ন বানাবে না।</small>
+<button id="go" class="ai">প্রশ্নপত্র বানান</button>
 </div>
 <div class="card" id="manual">
 <h3 style="margin:0 0 8px">✍️ নিজে প্রশ্ন লিখুন</h3>
@@ -280,14 +285,16 @@ button.dng:hover{background:#be123c;color:#fff}
 <div class="bank">
 <p class="msg demo" id="demoNote" hidden>ডেমো মোড: Apps Script URL বসানো হয়নি, তাই ডেটা এই ব্রাউজারেই থাকছে। পরীক্ষার পাসওয়ার্ড: <b>admin</b> (অ্যাডমিন) ও <b>editor</b> (এডিটর)।</p>
 <div class="bt"><input id="bq" placeholder="খুঁজুন: প্রতিষ্ঠান, বিষয়, শ্রেণি…"><select id="bt"><option value="">সব ধরন</option><option value="mcq">MCQ</option><option value="short">সংক্ষিপ্ত</option><option value="creative">সৃজনশীল</option></select></div>
-<div class="card" id="conv"><h3 style="margin:0 0 8px">📄 PDF/ছবি থেকে টেক্সট বের করুন</h3>
-<small>PDF বা ছবি আপলোড করলে পুরো লেখা টেক্সট হয়ে নিচে আসবে (সর্বোচ্চ ৩০ পৃষ্ঠা)। লেখাটা কপি করতে বা "প্রশ্ন তৈরি"-তে পাঠাতে পারবেন।</small>
-<input type="file" id="convFile" accept="application/pdf,image/*">
+<div class="card" id="conv"><h3 style="margin:0 0 8px">📄 PDF/Word/ছবি থেকে টেক্সট বের করুন</h3>
+<small>PDF, Word (.docx) বা ছবি আপলোড করলে পুরো লেখা টেক্সট হয়ে নিচে আসবে (সর্বোচ্চ ৩০ পৃষ্ঠা)। লেখাটা কপি করতে বা "প্রশ্ন তৈরি" ট্যাবের প্রশ্নের ঘরে পাঠাতে পারবেন।</small>
+<input type="file" id="convFile" accept="application/pdf,.docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*">
 <label style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" id="convOcr" style="width:auto"> OCR দিয়ে পড়ুন (লেখা এলোমেলো এলে বা স্ক্যান করা PDF হলে, ধীর)</label>
 <div class="acts"><button type="button" id="convGo">টেক্সটে রূপান্তর করুন</button></div>
 <div class="sub" id="convMsg"></div>
 <textarea id="convOut" style="min-height:180px" hidden></textarea>
-<div class="acts" id="convAct" hidden><button type="button" class="sec" id="convCopy">📋 কপি করুন</button><button type="button" class="sec" id="convSend">✍️ প্রশ্ন তৈরিতে পাঠান</button></div></div>
+<input id="convName" placeholder="Drive-এ সংরক্ষণের নাম" hidden>
+<div class="acts" id="convAct" hidden><button type="button" class="sec" id="convCopy">📋 কপি করুন</button><button type="button" class="sec" id="convSend">✍️ প্রশ্ন লেখার ঘরে পাঠান</button><button type="button" id="convSave">💾 Drive-এ সংরক্ষণ (মূল ফাইল + টেক্সট)</button></div></div>
+<div class="card" id="files" hidden><h3 style="margin:0 0 8px">🗂 সংরক্ষিত ফাইল (Drive)</h3><div id="fileList"></div></div>
 <div id="bankList"></div>
 </div>
 </section>
@@ -462,6 +469,10 @@ function demo(action,d){
   if(action==="examGet"){const x=db.find(y=>y.id===d.id);if(!x)throw new Error("পরীক্ষা পাওয়া যায়নি");if(!x.live&&rl==="visitor")throw new Error("এই পরীক্ষা এখন চালু নেই");return{set:strip(x)};}
   if(action==="examSubmit"){const x=db.find(y=>y.id===d.id);let sc=0;x.items.forEach((it,i)=>{if(d.answers[i]===it.answer)sc++;});const rs=JSON.parse(localStorage.getItem("qb_res")||"[]");if(rs.some(y=>y.id===d.id&&y.roll===d.roll))throw new Error("এই রোল দিয়ে আগেই পরীক্ষা দেওয়া হয়েছে");rs.push({id:d.id,roll:d.roll,name:d.name,score:sc,total:x.items.length,t:Date.now()});localStorage.setItem("qb_res",JSON.stringify(rs));return{score:sc,total:x.items.length};}
   if(rl==="visitor"&&action!=="save")throw new Error("অনুমতি নেই");
+  if(action==="fileSave"){const bin=atob(d.file),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);(window.__df=window.__df||[]).unshift({id:"f"+Date.now(),name:d.name,fname:d.fname,text:d.text||"",url:URL.createObjectURL(new Blob([u],{type:d.mime||"application/octet-stream"})),turl:URL.createObjectURL(new Blob([d.text||""],{type:"text/plain"}))});return{};}
+  if(action==="fileList")return{files:(window.__df||[]).map(x=>({id:x.id,name:x.name,fname:x.fname,url:x.url,turl:x.turl}))};
+  if(action==="fileText"){const x=(window.__df||[]).find(y=>y.id===d.id);return{text:x?x.text:""};}
+  if(action==="fileDelete"){window.__df=(window.__df||[]).filter(x=>x.id!==d.id);return{};}
   if(action==="pdfUpload"){const bin=atob(d.file),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);(window.__dp=window.__dp||[]).unshift({id:"p"+Date.now(),name:d.name,url:URL.createObjectURL(new Blob([u],{type:"application/pdf"}))});return{};}
   if(action==="pdfDelete"){window.__dp=(window.__dp||[]).filter(x=>x.id!==d.id);return{};}
   if(action==="examResults")return{results:JSON.parse(localStorage.getItem("qb_res")||"[]").filter(x=>x.id===d.id)};
@@ -948,6 +959,7 @@ host.parentNode.insertBefore(card,host);
 <script>
 (function(){
 const PJ="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",PW="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",TS="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+const MM="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js";
 const g=id=>document.getElementById(id);
 const ld=u=>new Promise((ok,no)=>{if(document.querySelector('script[src="'+u+'"]'))return ok();const e=document.createElement("script");e.src=u;e.onload=ok;e.onerror=()=>no(new Error("লাইব্রেরি লোড হয়নি (ইন্টারনেট দেখুন)"));document.head.appendChild(e);});
 function toast(t){const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),3000);}
@@ -955,6 +967,9 @@ async function extract(file,useOcr,say){
   let worker=null;const parts=[];
   const ocr=async c=>{if(!worker){await ld(TS);say("OCR প্রস্তুত হচ্ছে (প্রথমবার একটু সময় লাগে)…");worker=await Tesseract.createWorker("ben+eng");}return(((await worker.recognize(c)).data.text)||"").trim();};
   try{
+    const nm=(file.name||"").toLowerCase();
+    if(nm.endsWith(".docx")){say("Word ফাইল পড়া হচ্ছে…");await ld(MM);const r=await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});return(r.value||"").replace(/\n{3,}/g,"\n\n").trim();}
+    if(nm.endsWith(".doc"))throw new Error("পুরনো .doc চলবে না। Word-এ খুলে Save As করে .docx বানিয়ে দিন");
     if(file.type.startsWith("image/")){
       const im=await createImageBitmap(file),c=document.createElement("canvas");c.width=im.width;c.height=im.height;c.getContext("2d").drawImage(im,0,0);
       say("ছবি পড়া হচ্ছে…");return await ocr(c);
@@ -975,7 +990,7 @@ async function extract(file,useOcr,say){
     return parts.join("\n\n");
   }finally{if(worker)try{await worker.terminate();}catch(e){}}
 }
-function toStem(t){g("tCreate").click();const ta=g("stem");ta.value=(ta.value.trim()?ta.value.trim()+"\n\n":"")+t;ta.dispatchEvent(new Event("input"));}
+function toStem(t){g("tCreate").click();const ta=g("mq");ta.value=(ta.value.trim()?ta.value.trim()+"\n\n":"")+t;ta.dispatchEvent(new Event("input"));}
 /* প্রশ্ন তৈরি: PDF থেকে লেখা */
 g("pdfCreateBtn").onclick=()=>g("pdfCreateFile").click();
 g("pdfCreateFile").onchange=async function(){
@@ -983,22 +998,54 @@ g("pdfCreateFile").onchange=async function(){
   const b=g("pdfCreateBtn"),old=b.textContent;b.disabled=true;
   try{const t=await extract(f,g("pdfOcrC").checked,m=>{b.textContent=m;});
     if(!t)throw new Error("কোনো লেখা পাওয়া যায়নি, OCR টিক দিয়ে আবার চেষ্টা করুন");
-    const ta=g("stem");ta.value=(ta.value.trim()?ta.value.trim()+"\n\n":"")+t;ta.dispatchEvent(new Event("input"));toast("পুরো লেখা উদ্দীপক ঘরে বসেছে");
+    const ta=g("stem");ta.value=(ta.value.trim()?ta.value.trim()+"\n\n":"")+t;ta.dispatchEvent(new Event("input"));toast("পুরো লেখা বসেছে, এবার প্রশ্নের ঘরে পাঠান");
   }catch(e){toast("PDF পড়া যায়নি: "+e.message);}
   b.disabled=false;b.textContent=old;
 };
 /* প্রশ্ন ব্যাংক: PDF/ছবি থেকে টেক্সট */
 g("convGo").onclick=async()=>{
-  const f=g("convFile").files[0];if(!f)return toast("আগে একটা PDF বা ছবি বাছুন");
-  const b=g("convGo"),m=g("convMsg");b.disabled=true;g("convOut").hidden=g("convAct").hidden=true;
+  const f=g("convFile").files[0];if(!f)return toast("আগে একটা PDF, Word বা ছবি বাছুন");
+  const b=g("convGo"),m=g("convMsg");b.disabled=true;g("convOut").hidden=g("convAct").hidden=g("convName").hidden=true;
   try{const t=await extract(f,g("convOcr").checked,x=>{m.textContent=x;});
     if(!t)throw new Error("কোনো লেখা পাওয়া যায়নি, OCR টিক দিয়ে আবার চেষ্টা করুন");
-    g("convOut").value=t;g("convOut").hidden=g("convAct").hidden=false;m.textContent="হয়ে গেছে। লেখাটা দেখে ঠিক করে নিতে পারেন।";
+    lastFile=f;g("convName").value=f.name.replace(/\.[^.]+$/,"");g("convOut").value=t;g("convOut").hidden=g("convAct").hidden=g("convName").hidden=false;m.textContent="হয়ে গেছে। লেখাটা দেখে ঠিক করে নিতে পারেন।";
   }catch(e){m.textContent="পড়া যায়নি: "+e.message;}
   b.disabled=false;
 };
 g("convCopy").onclick=async()=>{try{await navigator.clipboard.writeText(g("convOut").value);toast("কপি হয়েছে");}catch(e){g("convOut").select();toast("লেখাটা বেছে নেওয়া হয়েছে, Ctrl+C চাপুন");}};
-g("convSend").onclick=()=>{toStem(g("convOut").value);toast("প্রশ্ন তৈরি ট্যাবের উদ্দীপক ঘরে বসেছে");};
+g("convSend").onclick=()=>{toStem(g("convOut").value);toast("প্রশ্ন তৈরি ট্যাবের প্রশ্নের ঘরে বসেছে");};
+g("stemToQ").onclick=()=>{const t=g("stem").value.trim();if(!t)return toast("আগে ছবি বা PDF/Word থেকে লেখা নিন");const q=g("mq");q.value=(q.value.trim()?q.value.trim()+"\n\n":"")+t;q.scrollIntoView({behavior:"smooth",block:"center"});q.focus();toast("লেখা প্রশ্নের ঘরে বসেছে");};
+/* Drive-এ মূল ফাইল + টেক্সট সংরক্ষণ */
+let lastFile=null;
+const mk=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;};
+async function fdraw(){
+  const box=g("fileList");
+  try{const r=await window.qbApi("fileList");g("files").hidden=false;box.textContent="";
+    const a=r.files||[];if(!a.length)box.appendChild(mk("small",null,"এখনো কিছু সংরক্ষণ করা হয়নি।"));
+    a.forEach(x=>{const row=mk("div","part"),nm=mk("span",null,x.name),acts=mk("div","acts");
+      const l1=mk("a",null,"মূল ফাইল");l1.href=x.url;l1.target="_blank";l1.rel="noopener";
+      const l2=mk("a",null,"টেক্সট ফাইল");l2.href=x.turl;l2.target="_blank";l2.rel="noopener";
+      const sh=mk("button","sec","লেখা আনুন");sh.type="button";sh.onclick=async()=>{try{const t=(await window.qbApi("fileText",{id:x.id})).text||"";lastFile=null;g("convOut").value=t;g("convOut").hidden=g("convAct").hidden=false;g("convName").hidden=true;g("convOut").scrollIntoView({behavior:"smooth",block:"center"});}catch(e){toast(e.message);}};
+      acts.append(l1,l2,sh);
+      if(window.qbRole()==="admin"){const d=mk("button","sec","মুছুন");d.type="button";d.onclick=async()=>{if(!confirm("ফাইল মুছবেন?"))return;try{await window.qbApi("fileDelete",{id:x.id});fdraw();}catch(e){toast(e.message);}};acts.appendChild(d);}
+      row.append(nm,acts);box.appendChild(row);});
+  }catch(e){g("files").hidden=true;}
+}
+window.pdfDraw=fdraw;
+g("convSave").onclick=()=>{
+  if(window.qbRole()==="visitor")return toast("সংরক্ষণের জন্য আগে লগইন করুন");
+  if(!lastFile)return toast("আগে একটা ফাইল রূপান্তর করুন");
+  if(lastFile.size>8*1024*1024)return toast("ফাইল ৮ MB-এর বেশি");
+  const n=g("convName").value.trim()||lastFile.name,b=g("convSave"),old=b.textContent;b.disabled=true;b.textContent="সংরক্ষণ হচ্ছে…";
+  const r=new FileReader();
+  r.onerror=()=>{toast("ফাইল পড়া যায়নি");b.disabled=false;b.textContent=old;};
+  r.onload=async()=>{
+    try{await window.qbApi("fileSave",{name:n,fname:lastFile.name,mime:lastFile.type,file:String(r.result).split(",")[1],text:g("convOut").value});toast("Drive-এ সংরক্ষণ হয়েছে");fdraw();}
+    catch(e){toast("সংরক্ষণ হয়নি: "+e.message);}
+    b.disabled=false;b.textContent=old;
+  };
+  r.readAsDataURL(lastFile);
+};
 })();
 </script>
 <script>
