@@ -1,6 +1,6 @@
 // netlify/functions/generate.js
 // Gemini দিয়ে প্রশ্ন বানায়। API key কোডে নেই, Netlify-এর GEMINI_API_KEY থেকে আসে।
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-4-hydrogen";
 
 const reply = (code, obj) => ({
   statusCode: code,
@@ -69,10 +69,11 @@ exports.handler = async (event) => {
   let a;
   try { a = JSON.parse(event.body || "{}"); } catch (e) { return reply(400, { error: "ভুল অনুরোধ" }); }
   const type = ["mcq", "short", "creative"].includes(a.type) ? a.type : "mcq";
+  const model = /^gemini-[a-z0-9.\-]{1,40}$/i.test(String(a.model || "")) ? String(a.model) : MODEL;
   a.type = type;
   try {
     const r = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent",
       {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": key },
@@ -84,7 +85,7 @@ exports.handler = async (event) => {
     );
     const j = await r.json().catch(() => ({}));
     if (!r.ok) {
-      const code = r.status === 429 || r.status === 503 ? r.status : 500;
+      const code = r.status === 429 || r.status === 503 ? r.status : (r.status >= 400 && r.status < 500 ? 400 : 500);
       return reply(code, { error: (j.error && j.error.message) || ("Gemini HTTP " + r.status) });
     }
     let t = (((j.candidates || [])[0] || {}).content || {}).parts;
